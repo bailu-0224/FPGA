@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>简易逻辑分析仪实现</title>
+    <script src = "echarts.js"></script>
+    <link rel="stylesheet" href="bootstrap.min.css">
+</head>
+<body>
+<script src="jquery-3.2.1.min.js" type="text/javascript"></script>
+<script src="bootstrap.js"></script>
+    <div id = "main" style="width: 1900px;height:950px;position: absolute"></div>
+        <div style="z-index: 1;position: absolute" class="option" id = "start">
+            <input type="image" src="stop.png" onclick="setStart()" alt="stop/start" width="30" height="30" />
+<!--            <input type="image" src="switch.png" onclick="" alt="switch case" width="30" height="30"/>-->
+            </div>
+            <div id="choose" >
+            <form role ="form" method=post target="rfFrame">
+                <div class="form-group">
+                    <label  class="form-control accordion-item">选择模式</label>
+                    <select class="accordion-button" name="model" id="model">
+                        <option value=1>示波器</option>
+                        <option value=2>逻辑分析仪</option>
+                    </select>
+                    <div id="ch" disabled="disabled" style="display: none" value=" " >
+                        <div class="form-group">
+                        <label class="form-control">阈值电压</label>
+                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage"/>
+                        </div>
+                        <label class="form-control ">采样频率</label>
+                        <select class="form-control" id="clock">
+                            <option value=1000>1us</option>
+                            <option value=100>10us</option>
+                            <option value=10>100us</option>
+                            <option value=1>1ms</option>
+                            <option value=0.1>10ms</option>
+                            <option value=0.01>100ms</option>
+                            <option value=0.001>1s</option>
+                        </select>
+                    </div>
+                    <button class="form-control"  id="sampling">开始采样</button>
+                </div>
+            </form>
+                <iframe id="rfFrame" name="rfFrame" src="about:blank" style="display:none;"></iframe>
+            </div>
+
+
+<style type="text/css">
+    #choose {
+        width: 200px;
+        height: 200px;
+        right: 200px;
+        bottom: 500px;
+        z-index: 1;
+        position: absolute;
+    }
+    #start
+    {
+        right:92px;
+        top:5px;
+
+    }
+</style>
+
+
+    <script type="text/javascript">
+        var ws = new WebSocket("ws://localhost:8080");
+        var model=1;
+        var voltage=5;
+        var clock;
+        var mode=["示波器","逻辑分析仪"]
+        var times=0;
+        var time=0;
+        var period1=0;
+        var vpp1=0;
+        const chartDom = document.getElementById('main');
+        const myChart = echarts.init(chartDom,'dark');
+        var data1 = [];
+        var data2 = [];
+        const num = [];
+        for(let i=0;i<1024;i++)
+            num[i] = i;
+        let number=0;
+        const symbolSize = 20;
+        ws.onopen = function(){
+
+        }
+        ws.onmessage = function(e) {
+            var json =e.data
+            switch (json.type) {
+                case "1":
+                {
+                    json.data.forEach(function (element) {
+                        if(element.ch==="1")
+                        {
+                            data1.push(parseInt(element.data));
+                            console.log(data1);
+                        }
+                        else
+                        {
+                            data2.push(parseInt(element.data));
+                            console.log(data2);
+                        }
+                    })
+                }
+                break;
+                case "2":
+                {
+                    data1=json.data.toArray();
+                    console.log(data1);
+                }
+                break;
+                case "3":
+                {
+                    period1=json.data.peroid;
+                    console.log(peroid1);
+                    vpp1 = json.data.vpp;
+                    console.log(vpp1);
+                }
+                break;
+
+            }
+            console.log(e.data);
+
+        }
+
+        ws.onerror = function(e){
+
+        }
+
+            $("#model").change(function () {
+                var i =$(this).val();
+                if(i==="2")
+                    $("#ch").show();
+                else
+                    $("#ch").hide();
+            })
+            $("#sampling").click(function () {
+                model = $("#model").val();
+                ws.send(JSON.stringify({type: 'model',data:model}));
+                if(model==="2") {
+                    voltage = parseInt($("#voltage").val());
+                    clock = parseInt($("#clock").val());
+                    ws.send(JSON.stringify({type: 'voltage', data: voltage}));
+                    ws.send(JSON.stringify({type: 'clock', data: clock}));
+                }
+                myChart.setOption(
+                    {
+                        title: [{
+                            text: '基于FPGA的'+mode[model-1]+'实现',
+                            left: '16%',
+                            top: '2%',
+                            textStyle: {
+                                color: '#fff',
+                                fontSize: 25
+                            }
+                        }],
+                        yAxis: [{
+                            name: "mv",
+                            type: "value",
+                            splitLine: {
+                                show: true
+                            },
+                            minorTick: {
+                                show: true
+                            },
+                            minorSplitLine: {
+                                show: true
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: "rgba(204,187,225,0.5)",
+                                }
+                            },
+                            min:0-voltage,
+                            max:voltage
+
+                        }]
+                    }
+                )
+            })
+
+
+            option = {
+                backgroundColor: "#1A1835",
+                title: [{
+                    text: '基于FPGA的'+mode[model-1]+'实现',
+                    left: '16%',
+                    top: '2%',
+                    textStyle: {
+                        color: '#fff',
+                        fontSize: 25
+                    }
+                },
+                    {
+                        id: 'statistic',
+                        text:  "数据统计情况",
+                        left: '80%',
+                        top: '2%',
+                        textStyle: {
+                            color: '#fff',
+                            fontSize: 25
+                        }
+                    },
+
+                    {
+
+                        text: "周期：",
+                        left: '80%',
+                        top: '10%',
+                        textStyle: {
+                            color: '#90ee90',
+                            fontSize: 25
+                        }
+                    },
+                    {
+
+                        text: "频率：",
+                        left: '90%',
+                        top: '10%',
+                        textStyle: {
+                            color: '#FF4500',
+                            fontSize: 25
+                        }
+                    },
+                ],
+                toolbox: {
+                    show: true,
+                    itemSize:25,
+                    feature: {
+                        mark: {
+                            show: true
+                        },
+                        dataView: {
+                            show: true,
+                            readOnly: false
+                        },
+                        magicType: {
+                            show: false,
+                            type: ['bar', 'line']
+                        },
+                        restore: {
+                            show: false
+                        },
+                        saveAsImage: {
+                            show: true
+                        },
+                        // myTool1:
+                        //     {
+                        //         show:true,
+                        //         title:"stop",
+                        //         icon:""
+                        //     }
+                    }
+                },
+                tooltip: {
+                    trigger: "axis",
+                    axisPointer: {
+                        type: "shadow",
+                        textStyle: {
+                            color: "#fff"
+                        }
+
+                    },
+                },
+                grid: [{
+                    left:'15%',
+                    width:'60%',
+                    height:'80%',
+                    textStyle: {
+                        color: "#fff"
+                    }
+                }],
+                legend: {
+                    x: '46%',
+                    top: '11%',
+                    textStyle: {
+                        color: '#90979c',
+                    },
+                    data: ['通道一', '通道二']
+                },
+
+
+                calculable: true,
+                xAxis: [{
+                    name: "time/ms",
+                    type: "category",
+                    axisLine: {
+                        lineStyle: {
+                            color: "rgba(204,187,225,0.5)",
+                        },
+                        onZero : true
+                    },
+                    minorTick: {
+                        show: true
+                    },
+                    minorSplitLine: {
+                        show: true
+                    },
+                    splitLine: {
+                        show: true
+                    },
+                    axisTick: {
+                        show: true
+                    },
+                    data: num,
+                }],
+
+                yAxis: [{
+                    name: "mv",
+                    type: "value",
+                    splitLine: {
+                        show: true
+                    },
+                    minorTick: {
+                        show: true
+                    },
+                    minorSplitLine: {
+                        show: true
+                    },
+                    axisLine: {
+                        lineStyle: {
+                            color: "rgba(204,187,225,0.5)",
+                        }
+                    },
+                    min:0-voltage,
+                    max:voltage
+
+                }],
+                dataZoom: [
+                    {
+                        type: 'slider',
+                        xAxisIndex: 0,
+                        filterMode: 'none'
+                    },
+                    {
+                        type: 'slider',
+                        yAxisIndex: 0,
+                        filterMode: 'none'
+                    },
+                    {
+                        type: 'inside',
+                        xAxisIndex: 0,
+                        filterMode: 'none'
+                    },
+                    {
+                        type: 'inside',
+                        show: true,
+                        yAxisIndex: 0,
+                        filterMode: 'none'
+                    }
+                ],
+                series: [{
+                    name: "通道一",
+                    type: "line",
+                    symbolSize: 10,
+                    symbol: 'circle',
+                    itemStyle: {
+                        color: "#6f7de3",
+                    },
+                    markPoint: {
+                        label: {
+                            normal: {
+                                textStyle: {
+                                    color: '#fff'
+                                }
+                            }
+                        },
+                        data: [{
+                            type: 'max',
+                            name: '最大值',
+
+                        }, {
+                            type: 'min',
+                            name: '最小值'
+                        }]
+                    },
+                    data: data1
+                }, {
+                    name: "通道二",
+                    type: "line",
+                    symbolSize: 10,
+                    symbol: 'circle',
+                    itemStyle: {
+                        color: "#c257F6",
+                    },
+                    markPoint: {
+                        label: {
+                            normal: {
+                                textStyle: {
+                                    color: '#fff'
+                                }
+                            }
+                        },
+                        data: [{
+                            type: 'max',
+                            name: '最大值',
+
+                        }, {
+                            type: 'min',
+                            name: '最小值'
+                        }]
+                    },
+                    data: data2
+                }, ]
+            }
+            myChart.setOption(option);
+            function addData()
+            {
+                for(let i=0;i<1023;i++)
+                    data1[i]= Math.random()-0.3*10
+                for(let i=0;i<1023;i++)
+                    data2[i]=(Math.random()-0.4*10);
+            }
+            var intervar= setInterval(function () {
+                addData();
+                myChart.setOption({
+                    xAxis: {
+                        data:num
+                    },
+                    series :[
+                        {
+                            name: "通道一",
+                            data:data1
+                        },
+                        {
+                            name: "通道二",
+                            data: data2
+                        }
+                    ]
+                },)
+
+            },50)
+            function stopInterval()
+            {
+                clearInterval(intervar);
+            }
+            function continueInterval()
+            {
+                intervar= setInterval(function () {
+                    addData();
+                    myChart.setOption({
+                        xAxis: {
+                            data:num
+                        },
+                        series :[
+                            {
+                                name: "通道一",
+                                data:data1
+                            },
+                            {
+                                name: "通道二",
+                                data: data2
+                            }
+                        ]
+                    },)
+
+                },50)
+            }
+            // continueInterval();
+            function setStart() {
+                if(times===0)
+                {
+                    stopInterval();
+                    times++;
+                }
+                else if(times===1)
+                {
+                    continueInterval();
+                    times=0;
+                }
+            }
+            function switchcase() {
+                // if(time===0)
+
+            }
+
+
+
+
+    </script>
+</body>
+</html>

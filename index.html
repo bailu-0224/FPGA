@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>简易逻辑分析仪实现</title>
+    <script src = "echarts.js"></script>
+</head>
+<body>
+    <div id = "main" style="width: 1200px;height:800px;"></div>
+    <div id = "left" style="width:200px;height: 200px"></div>
+    <script type="text/javascript">
+
+        const chartDom = document.getElementById('main');
+        const myChart = echarts.init(chartDom,'dark');
+
+        let option;
+        let num=0;
+        const data1 = [];
+        const data2 = [];
+        const data = [data1,data2];
+        const symbolSize = 20;
+        option = {
+            legend: {
+                data: ['通道一','通道二']
+            },
+            title: {
+                text: '基于FPGA的简易逻辑分析仪实现',
+                left: 'left'
+            },
+            tooltip: {
+                triggerOn: 'none',
+                // formatter: function (params) {
+                //     return (
+                //         'X: ' +
+                //         params.data[0].toFixed(2) +
+                //         '<br>Y: ' +
+                //         params.data[1].toFixed(2)
+                //     );
+                // }
+            },
+            grid: {
+                top: '8%',
+                bottom: '12%'
+            },
+            xAxis: {
+                // min: -100,
+                // max: 70,
+                type: 'value',
+                axisLine: { onZero: false }
+            },
+            yAxis: {
+                // min: -30,
+                // max: 60,
+                type: 'value',
+                axisLine: { onZero: false }
+            },
+            dataZoom: [
+                {
+                    type: 'slider',
+                    xAxisIndex: 0,
+                    filterMode: 'none'
+                },
+                {
+                    type: 'slider',
+                    yAxisIndex: 0,
+                    filterMode: 'none'
+                },
+                {
+                    type: 'inside',
+                    xAxisIndex: 0,
+                    filterMode: 'none'
+                },
+                {
+                    type: 'inside',
+                    yAxisIndex: 0,
+                    filterMode: 'none'
+                }
+            ],
+            series: [
+                {
+                    name: '通道一',
+                    type: 'line',
+                    smooth: false,
+                    symbolSize: symbolSize,
+                    stack:'a',
+                    data: data1
+                },
+                {
+                    name: '通道二',
+                    type: 'line',
+                    symbolSize: symbolSize,
+                    stack:'a',
+                    data: data2
+                }
+            ]
+        };
+        setTimeout(function () {
+            // Add shadow circles (which is not visible) to enable drag.
+            myChart.setOption({
+                graphic: data.map(function (item, dataIndex) {
+                    return {
+                        type: 'circle',
+                        position: myChart.convertToPixel('grid', item),
+                        shape: {
+                            cx: 0,
+                            cy: 0,
+                            r: symbolSize / 2
+                        },
+                        invisible: true,
+                        draggable: false,
+                        // ondrag: function (dx, dy) {
+                        //     onPointDragging(dataIndex, [this.x, this.y]);
+                        // },
+                        // onmousemove: function () {
+                        //     showTooltip(dataIndex);
+                        // },
+                        // onmouseout: function () {
+                        //     hideTooltip(dataIndex);
+                        // },
+                        z: 100
+                    };
+                })
+            });
+        }, 0);
+        window.addEventListener('resize', updatePosition);
+        myChart.on('dataZoom', updatePosition);
+        function updatePosition() {
+            myChart.setOption({
+                graphic: data.map(function (item, dataIndex) {
+                    return {
+                        position: myChart.convertToPixel('grid', item)
+                    };
+                })
+            });
+        }
+        function showTooltip(dataIndex) {
+            myChart.dispatchAction({
+                type: 'showTip',
+                seriesIndex: 0,
+                dataIndex: dataIndex
+            });
+        }
+        function hideTooltip(dataIndex) {
+            myChart.dispatchAction({
+                type: 'hideTip'
+            });
+        }
+        function onPointDragging(dataIndex, pos) {
+            data[dataIndex] = myChart.convertFromPixel('grid', pos);
+            // Update data
+            myChart.setOption({
+                series: [
+                    {
+                        id: 'a',
+                        data: data
+                    }
+                ]
+            });
+        }
+        function addData()
+        {
+            data1.push((Math.random() - 0.4) * 10 + data1[data1.length - 1]);
+            data2.push((Math.random()-0.3)*10+data2[data2.length - 1]);
+            num++;
+        }
+        option && myChart.setOption(option);
+        setInterval(function () {
+            addData();
+            myChart.setOption({
+                xAxis: {
+                    data:num
+                },
+                series :[
+                    {
+                        name: '通道一',
+                        data:data1
+                    },
+                    {
+                        name: '通道二',
+                        data: data2
+                    }
+                ]
+            },)
+
+        },500)
+    </script>
+</body>
+</html>
