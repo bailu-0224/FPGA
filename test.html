@@ -64,7 +64,7 @@
 
 
     <script type="text/javascript">
-        var ws = new WebSocket("ws://localhost:8080");
+        var ws = new WebSocket("ws://localhost:8765");
         var model=1;
         var voltage=5;
         var clock;
@@ -86,31 +86,37 @@
 
         }
         ws.onmessage = function(e) {
-            var json =e.data
+            console.log(e.data)
+            var json =JSON.parse(e.data)
             switch (json.type) {
-                case "1":
+                case 1:
                 {
                     json.data.forEach(function (element) {
-                        if(element.ch==="1")
+                        if(element.ch===1)
                         {
-                            data1.push(parseInt(element.data));
-                            console.log(data1);
+                            if(data1.length>1024)
+                                data1.length=0;
+                            data1.push(element.num);
                         }
-                        else
+                        else if(element.ch===2)
                         {
-                            data2.push(parseInt(element.data));
-                            console.log(data2);
+                            if(data2.length>1024)
+                                data2.length=0;
+                            data2.push(element.num);
+
+
                         }
                     })
+                    // console.log(json.data);
                 }
                 break;
-                case "2":
+                case 2:
                 {
                     data1=json.data.toArray();
                     console.log(data1);
                 }
                 break;
-                case "3":
+                case 3:
                 {
                     period1=json.data.peroid;
                     console.log(peroid1);
@@ -120,7 +126,7 @@
                 break;
 
             }
-            console.log(e.data);
+            // console.log(e.data);
 
         }
 
@@ -136,7 +142,7 @@
                     $("#ch").hide();
             })
             $("#sampling").click(function () {
-                model = $("#model").val();
+                model = parseInt($("#model").val());
                 ws.send(JSON.stringify({type: 'model',data:model}));
                 if(model==="2") {
                     voltage = parseInt($("#voltage").val());
@@ -405,15 +411,8 @@
                 }, ]
             }
             myChart.setOption(option);
-            function addData()
-            {
-                for(let i=0;i<1023;i++)
-                    data1[i]= Math.random()-0.3*10
-                for(let i=0;i<1023;i++)
-                    data2[i]=(Math.random()-0.4*10);
-            }
+
             var intervar= setInterval(function () {
-                addData();
                 myChart.setOption({
                     xAxis: {
                         data:num
@@ -430,7 +429,7 @@
                     ]
                 },)
 
-            },50)
+            },5)
             function stopInterval()
             {
                 clearInterval(intervar);
