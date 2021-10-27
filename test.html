@@ -85,8 +85,6 @@
         ws.onopen = function(){
 
 
-
-
         }
         ws.onmessage = function(e) {
             console.log(e.data)
@@ -94,22 +92,10 @@
             switch (json.type) {
                 case 1:
                 {
-                    json.data.forEach(function (element) {
-                        if(element.ch===1)
-                        {
-                            if(data1.length>1024)
-                                data1.length=0;
-                            data1.push(element.num);
-                        }
-                        else if(element.ch===2)
-                        {
-                            if(data2.length>1024)
-                                data2.length=0;
-                            data2.push(element.num);
-
-
-                        }
-                    })
+                    if(json.ch===1)
+                        data1 = [].concat(json.data);
+                    else
+                        data2 = [].concat(json.data);
                     // console.log(json.data);
                 }
                 break;
