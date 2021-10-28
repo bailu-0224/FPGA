@@ -25,7 +25,7 @@
                     <div id="ch" disabled="disabled" style="display: none" value=" " >
                         <div class="form-group">
                         <label class="form-control">阈值电压</label>
-                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage"/>
+                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage" value="5"/>
                         </div>
                         <label class="form-control ">采样频率</label>
                         <select class="form-control" id="clock">
@@ -87,7 +87,7 @@
 
         }
         ws.onmessage = function(e) {
-            console.log(e.data)
+            // console.log(e.data)
             var json =JSON.parse(e.data)
             switch (json.type) {
                 case 1:
@@ -139,7 +139,9 @@
                     voltage = 5;
                 if(model===2) {
                     voltage = parseInt($("#voltage").val());
-                    clock = parseInt($("#clock").val());
+                    if(voltage===null)
+                        voltage=5;
+                    clock = parseFloat($("#clock").val());
                     ws.send(JSON.stringify({type: 'voltage', data: voltage}));
                     ws.send(JSON.stringify({type: 'clock', data: clock}));
                 }
