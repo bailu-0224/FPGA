@@ -96,13 +96,16 @@
                         data1 = [].concat(json.data);
                     else
                         data2 = [].concat(json.data);
-                    // console.log(json.data);
                 }
                 break;
                 case 2:
                 {
-                    data1=json.data.toArray();
-                    console.log(data1);
+                    if(json.ch===1) {
+                        data1 = [].concat(json.data);
+                    }
+                    else
+                        data2 = [].concat((json.data));
+
                 }
                 break;
                 case 3:
@@ -115,7 +118,6 @@
                 break;
 
             }
-            // console.log(e.data);
 
         }
 
@@ -133,7 +135,9 @@
             $("#sampling").click(function () {
                 model = parseInt($("#model").val());
                 ws.send(JSON.stringify({type: 'model',data:model}));
-                if(model==="2") {
+                if(model===1)
+                    voltage = 5;
+                if(model===2) {
                     voltage = parseInt($("#voltage").val());
                     clock = parseInt($("#clock").val());
                     ws.send(JSON.stringify({type: 'voltage', data: voltage}));
@@ -170,11 +174,10 @@
                             min:0-voltage,
                             max:voltage
 
-                        }]
+                        }],
                     }
                 )
             })
-
 
             option = {
                 backgroundColor: "#1A1835",
@@ -199,7 +202,6 @@
                     },
 
                     {
-
                         text: "周期：",
                         left: '80%',
                         top: '10%',
@@ -209,7 +211,6 @@
                         }
                     },
                     {
-
                         text: "频率：",
                         left: '90%',
                         top: '10%',
@@ -272,7 +273,7 @@
                     textStyle: {
                         color: '#90979c',
                     },
-                    data: ['通道一', '通道二']
+                    data: ['通道一','通道二']
                 },
 
 
@@ -402,6 +403,7 @@
             myChart.setOption(option);
 
             var intervar= setInterval(function () {
+                if(model===1)
                 myChart.setOption({
                     xAxis: {
                         data:num
@@ -417,16 +419,7 @@
                         }
                     ]
                 },)
-
-            },5)
-            function stopInterval()
-            {
-                clearInterval(intervar);
-            }
-            function continueInterval()
-            {
-                intervar= setInterval(function () {
-                    addData();
+                else
                     myChart.setOption({
                         xAxis: {
                             data:num
@@ -436,13 +429,32 @@
                                 name: "通道一",
                                 data:data1
                             },
-                            {
-                                name: "通道二",
-                                data: data2
-                            }
                         ]
                     },)
 
+            },50)
+            function stopInterval()
+            {
+                clearInterval(intervar);
+            }
+            function continueInterval()
+            {
+                intervar= setInterval(function () {
+                        myChart.setOption({
+                            xAxis: {
+                                data:num
+                            },
+                            series :[
+                                {
+                                    name: "通道一",
+                                    data:data1
+                                },
+                                {
+                                    name: "通道二",
+                                    data: data2
+                                }
+                            ]
+                        },)
                 },50)
             }
             // continueInterval();
