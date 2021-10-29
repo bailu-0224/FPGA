@@ -9,7 +9,7 @@
 <body>
 <script src="jquery-3.2.1.min.js" type="text/javascript"></script>
 <script src="bootstrap.js"></script>
-    <div id = "main" style="width: 1900px;height:950px;position: absolute"></div>
+    <div id = "main" style="width: 100%;height:100%;position: absolute"></div>
         <div style="z-index: 1;position: absolute" class="option" id = "start">
             <input type="image" src="stop.png" onclick="setStart()" alt="stop/start" width="30" height="30" />
 <!--            <input type="image" src="switch.png" onclick="" alt="switch case" width="30" height="30"/>-->
@@ -24,33 +24,27 @@
                     </select>
                     <div id="ch" disabled="disabled" style="display: none" value=" " >
                         <div class="form-group">
-                        <label class="form-control">阈值电压</label>
-                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage" value="5"/>
+                        <label class="form-control">阈值电压(mv)</label>
+                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage" value="2.5" AUTOCOMPLETE="OFF"/>
                         </div>
-                        <label class="form-control ">采样频率</label>
-                        <select class="form-control" id="clock">
-                            <option value=1000>1us</option>
-                            <option value=100>10us</option>
-                            <option value=10>100us</option>
-                            <option value=1>1ms</option>
-                            <option value=0.1>10ms</option>
-                            <option value=0.01>100ms</option>
-                            <option value=0.001>1s</option>
-                        </select>
                     </div>
+                        <label class="form-control ">采样频率(Hz)</label>
+                        <input type="text" class="form-control" placeholder="请输入采样频率" id="clock" value="1000" AUTOCOMPLETE="OFF" required="required"/>
+                        </select>
+
                     <button class="form-control"  id="sampling">开始采样</button>
                 </div>
             </form>
                 <iframe id="rfFrame" name="rfFrame" src="about:blank" style="display:none;"></iframe>
             </div>
-
+    <div id = "fft"></div>
 
 <style type="text/css">
     #choose {
-        width: 200px;
-        height: 200px;
-        right: 200px;
-        bottom: 500px;
+        width: 10%;
+        height: 10%;
+        right: 7.5%;
+        bottom: 30%;
         z-index: 1;
         position: absolute;
     }
@@ -58,7 +52,15 @@
     {
         right:92px;
         top:5px;
-
+    }
+    #fft
+    {
+        z-index:1;
+        width: 25%;
+        height: 40%;
+        top: 10%;
+        left: 70%;
+        position: absolute;
     }
 </style>
 
@@ -74,9 +76,18 @@
         var period1=0;
         var vpp1=0;
         const chartDom = document.getElementById('main');
+        const chartDom1 = document.getElementById('fft');
         const myChart = echarts.init(chartDom,'dark');
+
+        const fft = echarts.init(chartDom1,'dark');
+        window.onresize = function () {
+            myChart.resize();
+            fft.resize();
+        };
         var data1 = [];
         var data2 = [];
+        var fft1 = [];
+        var fft2 = [];
         const num = [];
         for(let i=0;i<1024;i++)
             num[i] = i;
@@ -87,15 +98,20 @@
 
         }
         ws.onmessage = function(e) {
-            // console.log(e.data)
             var json =JSON.parse(e.data)
             switch (json.type) {
                 case 1:
                 {
                     if(json.ch===1)
+                    {
                         data1 = [].concat(json.data);
+                        fft1  = [].concat(json.fft);
+                    }
                     else
+                    {
                         data2 = [].concat(json.data);
+                        fft2  = [].concat(json.fft);
+                    }
                 }
                 break;
                 case 2:
@@ -135,21 +151,25 @@
             $("#sampling").click(function () {
                 model = parseInt($("#model").val());
                 ws.send(JSON.stringify({type: 'model',data:model}));
+                clock = parseFloat($("#clock").val())/1000;
+                ws.send(JSON.stringify({type: 'clock', data: clock}));
                 if(model===1)
                     voltage = 5;
-                if(model===2) {
-                    voltage = parseInt($("#voltage").val());
+                else if(model===2) {
+                    voltage =parseFloat($("#voltage").val());
                     if(voltage===null)
                         voltage=5;
-                    clock = parseFloat($("#clock").val());
                     ws.send(JSON.stringify({type: 'voltage', data: voltage}));
-                    ws.send(JSON.stringify({type: 'clock', data: clock}));
                 }
+                console.log(JSON.stringify({type: 'model',data:model}));
+                console.log(JSON.stringify({type: 'clock', data: clock}));
+                console.log(JSON.stringify({type: 'voltage', data: voltage}));
+
                 myChart.setOption(
                     {
                         title: [{
                             text: '基于FPGA的'+mode[model-1]+'实现',
-                            left: '16%',
+                            left: '10%',
                             top: '2%',
                             textStyle: {
                                 color: '#fff',
@@ -185,7 +205,7 @@
                 backgroundColor: "#1A1835",
                 title: [{
                     text: '基于FPGA的'+mode[model-1]+'实现',
-                    left: '16%',
+                    left: '10%',
                     top: '2%',
                     textStyle: {
                         color: '#fff',
@@ -195,7 +215,7 @@
                     {
                         id: 'statistic',
                         text:  "数据统计情况",
-                        left: '80%',
+                        left: '75%',
                         top: '2%',
                         textStyle: {
                             color: '#fff',
@@ -203,24 +223,24 @@
                         }
                     },
 
-                    {
-                        text: "周期：",
-                        left: '80%',
-                        top: '10%',
-                        textStyle: {
-                            color: '#90ee90',
-                            fontSize: 25
-                        }
-                    },
-                    {
-                        text: "频率：",
-                        left: '90%',
-                        top: '10%',
-                        textStyle: {
-                            color: '#FF4500',
-                            fontSize: 25
-                        }
-                    },
+                    // {
+                    //     text: "通道一Vpp：",
+                    //     left: '75%',
+                    //     top: '10%',
+                    //     textStyle: {
+                    //         color: '#90ee90',
+                    //         fontSize: 25
+                    //     }
+                    // },
+                    // {
+                    //     text: "通道二Vpp：",
+                    //     left: '85%',
+                    //     top: '10%',
+                    //     textStyle: {
+                    //         color: '#FF4500',
+                    //         fontSize: 25
+                    //     }
+                    // },
                 ],
                 toolbox: {
                     show: true,
@@ -243,12 +263,7 @@
                         saveAsImage: {
                             show: true
                         },
-                        // myTool1:
-                        //     {
-                        //         show:true,
-                        //         title:"stop",
-                        //         icon:""
-                        //     }
+
                     }
                 },
                 tooltip: {
@@ -262,7 +277,7 @@
                     },
                 },
                 grid: [{
-                    left:'15%',
+                    left:'9%',
                     width:'60%',
                     height:'80%',
                     textStyle: {
@@ -352,7 +367,7 @@
                     name: "通道一",
                     type: "line",
                     symbolSize: 10,
-                    symbol: 'circle',
+                    showSymbol : false,
                     itemStyle: {
                         color: "#6f7de3",
                     },
@@ -366,11 +381,8 @@
                         },
                         data: [{
                             type: 'max',
-                            name: '最大值',
+                            name: '通道一Vpp',
 
-                        }, {
-                            type: 'min',
-                            name: '最小值'
                         }]
                     },
                     data: data1
@@ -378,7 +390,7 @@
                     name: "通道二",
                     type: "line",
                     symbolSize: 10,
-                    symbol: 'circle',
+                    showSymbol : false,
                     itemStyle: {
                         color: "#c257F6",
                     },
@@ -392,11 +404,7 @@
                         },
                         data: [{
                             type: 'max',
-                            name: '最大值',
-
-                        }, {
-                            type: 'min',
-                            name: '最小值'
+                            name: '通道二Vpp',
                         }]
                     },
                     data: data2
@@ -405,7 +413,6 @@
             myChart.setOption(option);
 
             var intervar= setInterval(function () {
-                if(model===1)
                 myChart.setOption({
                     xAxis: {
                         data:num
@@ -421,18 +428,6 @@
                         }
                     ]
                 },)
-                else
-                    myChart.setOption({
-                        xAxis: {
-                            data:num
-                        },
-                        series :[
-                            {
-                                name: "通道一",
-                                data:data1
-                            },
-                        ]
-                    },)
 
             },50)
             function stopInterval()
@@ -472,10 +467,78 @@
                     times=0;
                 }
             }
-            function switchcase() {
-                // if(time===0)
+            fftoption = {
+                backgroundColor: "#1A1835",
+                grid: [{
+                    // left:'100%',
+                    // width:'100%',
+                    // height:'10%',
+                    textStyle: {
+                        color: "#fff"
+                    }
+                }],
+                legend: {
+                    x: '75%',
+                    top: '15%',
+                    textStyle: {
+                        color: '#90979c',
+                    },
+                    data: ['通道一fft','通道二fft']
+                },
 
+                xAxis: [{
+                    name: "time/ms",
+                    type: "category",
+                    data: num
+                }],
+                yAxis: [{
+                    name: "fft",
+                    type: "value",
+                    min: 0,
+                    max: 1
+                }],
+                series: [
+                    {
+                    name: "通道一fft",
+                    type: "line",
+                    symbolSize: 10,
+                    showSymbol:false,
+                    itemStyle: {
+                        color: "#6f7de3",
+                    }
+                    },
+                    {
+                        name: "通道二fft",
+                        type: "line",
+                        symbolSize: 10,
+                        showSymbol:false,
+                        itemStyle: {
+                            color: "#c257F6",
+                        }
+                    }
+                    ]
             }
+            fft.setOption(fftoption);
+            setInterval(function (){
+                fft.setOption(
+                    {
+                        xAxis:
+                            {
+                                data:num
+                            },
+                        series :[
+                            {
+                                name: "通道一fft",
+                                data:fft1
+                            },
+                            {
+                                name: "通道二fft",
+                                data: fft2
+                            }
+                        ]
+                    }
+                )
+            },50)
 
 
 
