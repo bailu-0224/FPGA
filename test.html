@@ -24,8 +24,8 @@
                     </select>
                     <div id="ch" disabled="disabled" style="display: none" value=" " >
                         <div class="form-group">
-                        <label class="form-control">阈值电压(mv)</label>
-                        <input type="text" class="form-control" placeholder="单位为mv" id="voltage" value="2.5" AUTOCOMPLETE="OFF"/>
+                        <label class="form-control">阈值电压(v)</label>
+                        <input type="text" class="form-control" placeholder="单位为v" id="voltage" value="2.5" AUTOCOMPLETE="OFF"/>
                         </div>
                     </div>
                         <label class="form-control ">采样频率(Hz)</label>
@@ -89,6 +89,9 @@
         var fft1 = [];
         var fft2 = [];
         const num = [];
+        const fftnum=[];
+        for(let i=0;i<500;i++)
+            fftnum[i]=i;
         for(let i=0;i<1024;i++)
             num[i] = i;
         let number=0;
@@ -177,7 +180,7 @@
                             }
                         }],
                         yAxis: [{
-                            name: "mv",
+                            name: "v",
                             type: "value",
                             splitLine: {
                                 show: true
@@ -215,7 +218,7 @@
                     {
                         id: 'statistic',
                         text:  "数据统计情况",
-                        left: '75%',
+                        left: '73%',
                         top: '2%',
                         textStyle: {
                             color: '#fff',
@@ -277,7 +280,7 @@
                     },
                 },
                 grid: [{
-                    left:'9%',
+                    left:'5%',
                     width:'60%',
                     height:'80%',
                     textStyle: {
@@ -320,7 +323,7 @@
                 }],
 
                 yAxis: [{
-                    name: "mv",
+                    name: "v",
                     type: "value",
                     splitLine: {
                         show: true
@@ -489,7 +492,7 @@
                 xAxis: [{
                     name: "time/ms",
                     type: "category",
-                    data: num
+                    data: fftnum
                 }],
                 yAxis: [{
                     name: "fft",
@@ -524,7 +527,7 @@
                     {
                         xAxis:
                             {
-                                data:num
+                                data:fftnum
                             },
                         series :[
                             {
